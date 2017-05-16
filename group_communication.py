@@ -1,4 +1,4 @@
-import pyactor
+from pyactor.context import interval
 
 '''
 
@@ -9,18 +9,21 @@ import pyactor
         - leave()
 
 '''
+
+
 class GroupMembershipManager:
-    _ask = ['join']
-    _tell = ['init_start']
+    _ask = ['join', 'get_members', 'check_members']
+    _tell = ['init_start', 'join']
     _ref = ['join']
 
     def __init__(self):
-        self.members_dic = {}
+        self.members_dic = dict()
         self.ttl = 10
         self.sequencer = None
+        self.interval1 = None
 
     def init_start(self):
-        pass
+        self.interval1 = interval(self.host, 1, self.proxy, 'check_members')
 
     def join(self, member_ref):
         if member_ref not in self.members_dic:
@@ -31,31 +34,32 @@ class GroupMembershipManager:
     def get_members(self):
         return self.members_dic.keys()
 
-    def leave(self):
-        pass
+    def leave(self, member_ref):
+        if member_ref in self.members_dic:
+            del self.members_dic[member_ref]
+            for member in self.members_dic:
+                member.remove_member(member_ref)
 
     def keep_alive_receiver(self, member_ref):
         if member_ref in self.members_dic:
             self.members_dic[member_ref] = self.ttl
 
     def check_members(self):
-        updated = False
-
         for member in self.members_dic:
             self.members_dic[member] -= 1
             if self.members_dic[member] == 0:
                 del self.members_dic[member]
-                updated = True
+                for member_r in self.members_dic:
+                    member_r.remove_member(member)
 
-        if updated:
-            for member in self.members_dic:
-                member.update_members(self.members_dic.keys())
 
 '''
 
-    Clase abstracta que define el miembros del grupo.
-    
+    Clase abstracta que define al miembro del grupo.
+
 '''
+
+
 class MemberGroup:
     _ask = []
     _tell = []
@@ -90,9 +94,11 @@ class MemberGroup:
 
 '''
 
-    Clase que define el miembro del modelo TOM con sequenciador.
-    
+    Clase que define al miembro del modelo TOM con sequenciador.
+
 '''
+
+
 class MemberSeq(MemberGroup):
     MemberGroup._ref += []
 
@@ -105,15 +111,18 @@ class MemberSeq(MemberGroup):
         pass
 
     def give_counter(self):
-        current_counter  = self.counter
+        current_counter = self.counter
         self.counter += 1
         return current_counter
+
 
 '''
 
     Clase que define al miembro del modelo TOM con Lamport.
-    
+
 '''
+
+
 class MemberLamp(MemberGroup):
     def __init__(self):
         MemberGroup.__init__(self)
