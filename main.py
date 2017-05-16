@@ -9,12 +9,17 @@ def manager_runner(file_src, host_port):
     os.system(command)
 
 
-# Funcion que inicia el proceso que ejecutara uno de los miembros del grupo.
+# Funcion que inicia el proceso que ejecutara a uno de los miembros del grupo.
 def members_runner(file_src, host_port, actor_id, manager_url):
     command = 'python ' + file_src + ' ' + host_port + ' ' + actor_id + ' ' + manager_url
     os.system(command)
 
 
+'''
+ 
+ Inicio del programa.
+ 
+'''
 if __name__ == "__main__":
     manager_src = 'manager.py'
     member_src = 'member.py'

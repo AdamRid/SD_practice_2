@@ -19,7 +19,6 @@ class GroupMembershipManager:
     def __init__(self):
         self.members_dic = dict()
         self.ttl = 10
-        self.sequencer = None
         self.interval1 = None
 
     def init_start(self):
@@ -61,34 +60,46 @@ class GroupMembershipManager:
 
 
 class MemberGroup:
-    _ask = []
-    _tell = []
-    _ref = ['update_members']
+    _ask = ['add_member', 'remove_member']
+    _tell = ['keep_alive']
+    _ref = ['add_member', 'remove_member']
 
+    # Metodo de inicializacion de la instancia de la clase
     def __init__(self):
+        self.members_list = list()
         self.manager = None
         self.id = None
         self.delay = None
+        self.interval1 = None
 
+    # Metodo abstracto de inicializacion del miembro
     def init_start(self):
         pass
 
-    def multicast(self):
-        pass
-
+    # Metodo abstracto que procesara el mensaje y lo agregara a la cola
     def receive(self):
         pass
 
+    # Metodo abstracto que procesara el mensaje que esta la cabeza de la cola
     def process_msg(self):
         pass
 
+    # Metodo que realiza el keep_alive en contra del gestor
     def keep_alive(self):
-        pass
+        self.manager.keep_alive_receiver(self.proxy)
 
-    def add_member(self, member):
-        pass
+    # Metodo para agregar un miembro notificado por el gestor
+    def add_member(self, member_ref):
+        if member_ref not in self.members_list:
+            self.members_list.append(member_ref)
 
-    def remove_member(self, member):
+    # Metodo para eliminar un miembro notificado por el gestor
+    def remove_member(self, member_ref):
+        if member_ref in self.members_list:
+            self.members_list.remove(member_ref)
+
+    # Metodo abstracto de la aplicacion que ejecutara el miembro
+    def application(self):
         pass
 
 
@@ -102,18 +113,30 @@ class MemberGroup:
 class MemberSeq(MemberGroup):
     MemberGroup._ref += []
 
-    def __init__(self, manager):
-        MemberGroup.__init__(self, manager)
+    def __init__(self):
+        MemberGroup.__init__(self)
         self.sequencer = None
         self.counter = 0
 
-    def multicast(self):
+    def init_start(self):
         pass
 
+    def multicast(self, msg, timestamp):
+        for member in self.members_list:
+            member.receive(msg, timestamp)
+
+    def application(self):
+        msg = 'msg from: ' + str(self.id)
+        timestamp = self.sequencer.give_counter()
+        self.multicast(msg, timestamp)
+
+    # Metodo ejecutado por el miembro que realiza el papel de secuenciador
     def give_counter(self):
         current_counter = self.counter
         self.counter += 1
         return current_counter
+
+
 
 
 '''
