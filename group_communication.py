@@ -12,9 +12,9 @@ from pyactor.context import interval
 
 
 class GroupMembershipManager:
-    _ask = ['join', 'get_members', 'check_members']
-    _tell = ['init_start', 'join']
-    _ref = ['join']
+    _ask = ['join', 'get_members']
+    _tell = ['init_start', 'check_members', 'keep_alive_receiver']
+    _ref = ['join', 'keep_alive_receiver']
 
     def __init__(self):
         self.members_dic = dict()
@@ -26,9 +26,14 @@ class GroupMembershipManager:
 
     def join(self, member_ref):
         if member_ref not in self.members_dic:
+            i = 0
             for member in self.members_dic:
-                member.add_member(member)
+                member.add_member(member_ref)
+                print i
+                i += 1
             self.members_dic[member_ref] = self.ttl
+            print str(member_ref) + ': joined'
+            return 'accepted'
 
     def get_members(self):
         return self.members_dic.keys()
@@ -60,8 +65,8 @@ class GroupMembershipManager:
 
 
 class MemberGroup:
-    _ask = ['add_member', 'remove_member']
-    _tell = ['keep_alive']
+    _ask = ['remove_member', 'init_start']
+    _tell = ['add_member']
     _ref = ['add_member', 'remove_member']
 
     # Metodo de inicializacion de la instancia de la clase
@@ -84,14 +89,12 @@ class MemberGroup:
     def process_msg(self):
         pass
 
-    # Metodo que realiza el keep_alive en contra del gestor
-    def keep_alive(self):
-        self.manager.keep_alive_receiver(self.proxy)
-
     # Metodo para agregar un miembro notificado por el gestor
     def add_member(self, member_ref):
         if member_ref not in self.members_list:
             self.members_list.append(member_ref)
+            print 'list of member: ' + self.id
+            print len(self.members_list)
 
     # Metodo para eliminar un miembro notificado por el gestor
     def remove_member(self, member_ref):
@@ -111,15 +114,23 @@ class MemberGroup:
 
 
 class MemberSeq(MemberGroup):
-    MemberGroup._ref += []
+    MemberGroup._ask += ['MemberGroup._ref']
+    MemberGroup._tell += ['keep_alive']
+    MemberGroup._ref += ['init_start', 'keep_alive']
 
     def __init__(self):
         MemberGroup.__init__(self)
         self.sequencer = None
         self.counter = 0
 
-    def init_start(self):
-        pass
+    def init_start(self, manager):
+        self.manager = manager
+        response = manager.join(self.proxy)
+        if response == 'accepted':
+            self.members_list = manager.get_members()
+            self.interval1 = interval(self.host, 1, self.proxy, 'keep_alive')
+
+            print self.id + ': joined'
 
     def multicast(self, msg, timestamp):
         for member in self.members_list:
@@ -135,6 +146,10 @@ class MemberSeq(MemberGroup):
         current_counter = self.counter
         self.counter += 1
         return current_counter
+
+    # Metodo que realiza el keep_alive en contra del gestor
+    def keep_alive(self):
+        self.manager.keep_alive_receiver(self.proxy)
 
 
 

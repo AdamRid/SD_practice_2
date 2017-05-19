@@ -2,6 +2,7 @@ from pyactor.context import set_context, create_host, sleep, serve_forever, inte
 from group_communication import GroupMembershipManager
 import sys
 
+
 if __name__ == "__main__":
     print
     if len(sys.argv) > 1:

@@ -1,4 +1,5 @@
 import group_communication as gc
+import time
 import threading
 import os
 
@@ -26,18 +27,21 @@ if __name__ == "__main__":
     manager_url = 'http://127.0.0.1:1277/'
     threads = list()
 
-    num_thread = 0
-    for port in range(1650, 1651):
-        if num_thread == 0:
-            # Ejecucion del gestor del grupo
-            t = threading.Thread(target=manager_runner, args=(manager_src, manager_url))
-        else:
-            # Ejecucion de los miembros del grupo
-            actor = 'member' + str(num_member)
-            t = threading.Thread(target=members_runner, args=(member_src, str(port), str(actor),
+    # Ejecucion del gestor del grupo
+    t = threading.Thread(target=manager_runner, args=(manager_src, manager_url))
+    threads.append(t)
+    t.start()
+    time.sleep(1)
+
+    num_member = 0
+    for port in range(1650, 1660):
+        # Ejecucion de los miembros del grupo
+        actor = 'member' + str(num_member)
+        t = threading.Thread(target=members_runner, args=(member_src, str(port), str(actor),
                                                               manager_url))
         threads.append(t)
         t.start()
-        num_thread += 1
+        num_member += 1
+        time.sleep(0.5)
 
 

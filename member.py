@@ -4,7 +4,7 @@ import sys
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) > 3:
         host_port = sys.argv[1]
         member_id = sys.argv[2]
         manager_url = sys.argv[3]
@@ -13,7 +13,8 @@ if __name__ == "__main__":
 
         h = create_host('http://127.0.0.1:' + host_port + '/')
 
-        manager = h.lookup_url(manager_url, 'Manager', 'manager')
+        manager_url += 'manager'
+        manager = h.lookup_url(manager_url, 'GroupMembershipManager', 'manager')
 
         # monitor = h.lookup_url('http://127.0.0.1:1278/monitor', 'Monitor', 'monitor')
 
@@ -21,7 +22,7 @@ if __name__ == "__main__":
 
         print member_id + " spawned"
 
-        member.init_start(manager, member_id)
+        member.init_start(manager)
 
         serve_forever()
 
