@@ -34,7 +34,7 @@ if __name__ == "__main__":
     time.sleep(1)
 
     num_member = 0
-    for port in range(1650, 1660):
+    for port in range(1650, 1655):
         # Ejecucion de los miembros del grupo
         actor = 'member' + str(num_member)
         t = threading.Thread(target=members_runner, args=(member_src, str(port), str(actor),
@@ -42,6 +42,6 @@ if __name__ == "__main__":
         threads.append(t)
         t.start()
         num_member += 1
-        time.sleep(0.5)
+        #time.sleep(0.5)
 
 

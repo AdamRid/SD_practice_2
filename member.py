@@ -1,6 +1,7 @@
 from pyactor.context import set_context, create_host, sleep, serve_forever, interval
 from group_communication import MemberSeq
 import sys
+import time
 
 
 if __name__ == "__main__":
@@ -21,8 +22,8 @@ if __name__ == "__main__":
         member = h.spawn(member_id, MemberSeq)
 
         print member_id + " spawned"
-
-        member.init_start(manager)
+        time.sleep(2)
+        member.init_start(manager, 1)
 
         serve_forever()
 
