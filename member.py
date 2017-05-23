@@ -15,15 +15,16 @@ if __name__ == "__main__":
         h = create_host('http://127.0.0.1:' + host_port + '/')
 
         manager_url += 'manager'
+
         manager = h.lookup_url(manager_url, 'GroupMembershipManager', 'manager')
 
-        # monitor = h.lookup_url('http://127.0.0.1:1278/monitor', 'Monitor', 'monitor')
+        monitor = h.lookup_url('http://127.0.0.1:2178/monitor', 'Monitor', 'monitor')
 
         member = h.spawn(member_id, MemberSeq)
 
         print member_id + " spawned"
-        time.sleep(2)
-        member.init_start(manager, 1)
+
+        member.init_start(manager, monitor, 2)
 
         serve_forever()
 

@@ -66,15 +66,17 @@ class GroupMembershipManager:
 
 class MemberGroup:
     _ask = ['remove_member', 'init_start']
-    _tell = ['add_member']
+    _tell = ['add_member', 'process_msg']
     _ref = ['add_member', 'remove_member']
 
     # Metodo de inicializacion de la instancia de la clase
     def __init__(self):
         self.members_list = list()
         self.manager = None
+        self.monitor = None
         self.id = None
         self.latency = None
+        self.messages = {}
 
     # Metodo abstracto que procesara el mensaje que esta la cabeza de la cola
     def process_msg(self):
@@ -117,6 +119,7 @@ class MemberSeq(MemberGroup):
         MemberGroup.__init__(self)
         self.sequencer = None
         self.counter = 0
+        self.next_counter = 0
         self.candidate = None
         self.candidates = {}
         self.electors = {}
@@ -124,16 +127,21 @@ class MemberSeq(MemberGroup):
         self.interval_app = None
         self.interval_ccandidate = None
         self.interval_celectors = None
+        self.interval_pmsg = None
 
-    def init_start(self, manager, latency):
+    def init_start(self, manager, monitor, latency):
         self.manager = manager
+        self.monitor = monitor
         self.latency = latency
         response = manager.join(self.proxy)
+        self.monitor.add_member(self.id)
         if response == 'accepted':
             # Inicializacion del intervalo del keep_alive
             self.interval_kalive = interval(self.host, 1, self.proxy, 'keep_alive')
             # Inicializacion del intervalo de la aplicacion
             self.interval_app = interval(self.host, latency, self.proxy, 'application')
+            # Inicializacion del intervale del process_msg
+            self.interval_pmsg = interval(self.host, 1, self.proxy, 'process_msg')
             # DEBUG LINE
             print self.id + ': joined'
 
@@ -147,10 +155,6 @@ class MemberSeq(MemberGroup):
             member.receive(msg, counter)
             print self.id + ': msg sended to ' + str(member)
         print self.id + ': multicast done'
-
-    # Metodo abstracto que procesara el mensaje y lo agregara a la cola
-    def receive(self, message, counter):
-        pass
 
     # Metodo que simula la aplicacion
     def application(self):
@@ -183,7 +187,7 @@ class MemberSeq(MemberGroup):
 
     # Metodo que recibe la candidatura de cada miembro para la eleccion del secuenciador
     def receive_candidate(self, member_ref, member_id):
-        #print self.id + ': receive_candidate "' + member_id + '"'
+        print self.id + ': receive_candidate "' + member_id + '"'
         self.candidates[member_ref] = member_id
 
     def ack_candidate(self, member_ref,  candidate):
@@ -196,7 +200,7 @@ class MemberSeq(MemberGroup):
         # Comprobamos si hemos obtenido todas las candidaturas
         if len(self.candidates) == len(member_list):
             # Seleccionamos como candidato el que tenga el mayor id
-            self.candidate = member_list[1]
+            self.candidate = member_list[0]
             for member in member_list:
                 if self.candidates[member] > self.candidates[self.candidate]:
                     self.candidate = member
@@ -212,8 +216,8 @@ class MemberSeq(MemberGroup):
         else:
             # En caso contrario volvemos a mandar nuestra candidatura
             member_list = self.manager.get_members()
-            print self.id + ': list members length -> ' + str(len(member_list))
-            print self.id + ': list candidates length -> ' + str(len(self.candidates))
+            print self.id + ': list members length -> ' + str(len(member_list)) + '; from check_candidate'
+            print self.id + ': list candidates length -> ' + str(len(self.candidates)) + '; from check_candidate'
             for member in member_list:
                 member.receive_candidate(self.proxy, self.id)
 
@@ -257,13 +261,26 @@ class MemberSeq(MemberGroup):
     # Metodo que recibe a los miembros que han terminado la eleccion del candidato
     # al secuenciador
     def ack_election_done(self, member_ref, candidate):
+        print self.id + ': ack_election_done -> ' + str(member_ref)
         self.electors[member_ref] = candidate
 
     # Metodo que realiza el keep_alive en contra del gestor
     def keep_alive(self):
         self.manager.keep_alive_receiver(self.proxy)
 
+    # Metodo que recive el mensaje y lo agregara a la cola
+    def receive(self, message, counter):
+        self.messages[counter] = message
 
+    # Metodo abstracto que procesara el mensaje que esta la cabeza de la cola
+    def process_msg(self):
+        if self.next_counter in self.messages:
+
+            self.monitor.add_member_msg(self.id, self.next_counter,
+                                        self.messages[self.next_counter])
+            print '------------as'
+            del self.messages[self.next_counter]
+            self.next_counter += 1
 
 
 '''
