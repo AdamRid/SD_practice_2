@@ -24,16 +24,9 @@ if __name__ == "__main__":
 
         print member_id + " spawned"
 
-        member.init_start(manager, monitor, 2)
+        member.init_start(manager, monitor, int(member_id[-1]) + 2)
+        # member.init_start(manager, monitor, 2)
 
-        #if member_id == 'member4':
-        #    sleep(10)
-        #    print member_id + ': done---------------'
-        #    member.receive_kill()
-        #    h.stop_actor(member_id)
-        #else:
-        #    serve_forever()
         serve_forever()
-
     else:
         print 'Missing argument\'s to execute the member'
