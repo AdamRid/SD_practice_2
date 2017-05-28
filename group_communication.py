@@ -278,7 +278,6 @@ class MemberSeq(MemberGroup):
 
             self.monitor.add_member_msg(self.id, self.next_counter,
                                         self.messages[self.next_counter])
-            print '------------as'
             del self.messages[self.next_counter]
             self.next_counter += 1
 
