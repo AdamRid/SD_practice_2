@@ -17,13 +17,14 @@ def members_runner(file_src, host_port, actor_id, manager_url):
 
 
 '''
- 
+
  Inicio del programa.
- 
+
 '''
 if __name__ == "__main__":
     manager_src = 'manager.py'
     member_src = 'member.py'
+    member_src2 = 'member2.py'
     manager_url = 'http://127.0.0.1:1277/'
     threads = list()
 
@@ -38,10 +39,12 @@ if __name__ == "__main__":
         # Ejecucion de los miembros del grupo
         actor = 'member' + str(num_member)
         t = threading.Thread(target=members_runner, args=(member_src, str(port), str(actor),
-                                                              manager_url))
+                                                          manager_url))
         threads.append(t)
         t.start()
         num_member += 1
-        #time.sleep(0.5)
+
+    time.sleep(25)
+
 
 

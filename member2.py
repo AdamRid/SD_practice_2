@@ -3,7 +3,6 @@ from group_communication import MemberSeq
 import sys
 import time
 
-
 if __name__ == "__main__":
     if len(sys.argv) > 3:
         host_port = sys.argv[1]
@@ -26,14 +25,13 @@ if __name__ == "__main__":
 
         member.init_start(manager, monitor, 2)
 
-        #if member_id == 'member4':
-        #    sleep(10)
-        #    print member_id + ': done---------------'
-        #    member.receive_kill()
-        #    h.stop_actor(member_id)
-        #else:
-        #    serve_forever()
-        serve_forever()
+        if member_id == 'member4':
+            sleep(10)
+            print member_id + ': done---------------'
+            member.receive_kill()
+            h.stop_actor(member_id)
+        else:
+            serve_forever()
 
     else:
         print 'Missing argument\'s to execute the member'
